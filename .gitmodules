@@ -1,0 +1,4 @@
+[submodule "quotient-pir"]
+	path = quotient-pir
+	url = https://github.com/geometryresearch/quotient-pir
+    branch = pi_in_g2
