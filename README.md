@@ -1,4 +1,4 @@
-# `semacaulk-updater`
+# `semacaulk-precompute`
 
 `semacaulk-updater` is a long-running process which monitors a Semacaulk
 contract, precomputes witness data upon insertions, and updates a Blyss bucket.
@@ -10,7 +10,7 @@ Clone this repository and fetch submodules:
 ```bash
 git clone git@github.com:geometryresearch/semacaulk-precompute.git && \
 cd semacaulk-precompute && \
-git submodule update --remote
+git submodule update --init
 ```
 
 Build the `quotient-pir` WASM files:
@@ -85,3 +85,71 @@ an identity trapdoor set to 0x5), run:
 ```bash
 cargo run --release --bin client -- insert --ptau 11.ptau -c 0x5fbdb2315678afecb367f032d93f642f64180aa3 -l 10 --id_nul 0x1 --id_trap 0x5
 ```
+
+## Full demo
+
+1. Generate config file using quotient-pir-config
+
+```bash
+git clone git@github.com:geometryresearch/quotient-pir-config.git
+cd quotient-pir-config
+cargo build --release
+cargo run --release --bin config -- -l 10 --ptau 10.ptau --output ../config_10
+cd ..
+```
+
+2. Build Semacaulk
+
+```bash
+git clone git@github.com:geometryresearch/semacaulk.git
+cd semacaulk
+git checkout feature/client
+cargo build --release
+```
+
+3. Run Anvil in another terminal
+
+```bash
+anvil
+```
+
+4. Deploy Semacaulk
+
+```bash
+./target/release/client deploy --ptau 11.ptau
+```
+
+5. Insert an identity commitment
+
+```bash
+./target/release/client insert --ptau 11.ptau -n 0x1 -t 0x2 -l 10 -c 0x5fbdb2315678afecb367f032d93f642f64180aa3
+```
+6. Run a local Blyss server in another terminal
+
+```bash
+git clone git@github.com:blyssprivacy/sdk.git
+cd sdk/lib/server
+cargo run --release --bin server
+```
+
+7. Run semacaulk-precompute in another terminal
+
+```bash
+git clone git@github.com:geometryresearch/semacaulk-precompute.git
+cd semacaulk-precompute
+git submodule update --init
+npm i
+cd quotient-pir
+cargo build --release && wasm-pack build --target nodejs
+cd ..
+node build/index.js -c 0x5fbdb2315678afecb367f032d93f642f64180aa3 -n 4 -m 1 -g ../config_10
+```
+
+8. Insert identity commitments in the semacaulk terminal
+
+```bash
+./target/release/client insert --ptau 11.ptau -n 0x3 -t 0x4 -l 10 -c 0x5fbdb2315678afecb367f032d93f642f64180aa3
+./target/release/client insert --ptau 11.ptau -n 0x5 -t 0x6 -l 10 -c 0x5fbdb2315678afecb367f032d93f642f64180aa3
+```
+
+You should see the semacaulk-precompute program pick up on these identity commitments, update QuotientTracker, and update the local Blyss bucket.
