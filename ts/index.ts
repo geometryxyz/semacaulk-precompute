@@ -166,9 +166,25 @@ const updateBlyssBucket = async (
         const pi_hex = Buffer.from(pi).toString('hex')
         toWrite[i.toString()] = pi_hex
     }
-    console.log("Writing %d pi values to Blyss...", Object.keys(toWrite).length, )
-    await bucket.write(toWrite)
-    console.log("Done")
+
+    const maxAttempts = 2
+    let success = false
+
+    for (let i = 0; i < maxAttempts; i ++) {
+        try {
+            console.log("Writing %d pi values to Blyss...", Object.keys(toWrite).length, )
+            await bucket.write(toWrite)
+            console.log("Done")
+            success = true
+            break
+        } catch {
+            //console.error(e)
+            //console.error(toWrite)
+        }
+    }
+    if (!success) {
+        console.error('%d attempts to run bucket.write() failed.', maxAttempts)
+    }
 }
 
 const fetchInitialLogs = async (
@@ -252,7 +268,6 @@ const mainLoop = async (
                 insertIdCommsFromLogs(qtServer, logs, contract.interface)
 
                 await updateBlyssBucket(qtServer, bucket)
-                //await bucket.write({'1': 'b'})
             }
         }
         //console.log('currentBlockNum:', currentBlockNum)
