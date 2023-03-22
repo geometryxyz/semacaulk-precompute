@@ -143,7 +143,7 @@ const run = async () => {
 
     // Start a server
     const app = genServer(bucket, qtServer, mutex)
-    console.log('Starting the proxy server')
+    console.log('Starting the proxy server on port %d', args.port)
     app.listen(args.port)
 
     // Start the main loop to monitor the contract
